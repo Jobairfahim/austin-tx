@@ -174,27 +174,74 @@
 
       if (!valid) return;
 
-      // Simulate form submission
+      // Submit to ClickSend SMS backend
       const submitBtn = form.querySelector('[type="submit"]');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Sending…';
 
-      setTimeout(function () {
+      const formData = new FormData(form);
+      const data = {
+        name: formData.get('name'),
+        email: formData.get('email') || '',
+        phone: formData.get('phone'),
+        message: formData.get('message')
+      };
+
+      fetch('send-clicksend.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+      })
+      .then(result => {
+        console.log('API result:', result);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Send Message';
-        form.reset();
-
+        
         let successMsg = form.querySelector('.form-success');
         if (!successMsg) {
           successMsg = document.createElement('div');
           successMsg.className = 'form-success';
-          successMsg.textContent = '✅ Message sent! We\'ll get back to you shortly. For immediate help, please call us.';
           form.appendChild(successMsg);
         }
-        successMsg.classList.add('visible');
 
+        if (result.success) {
+          successMsg.textContent = '✅ Message sent! We\'ll get back to you shortly. For immediate help, please call us.';
+          form.reset();
+        } else {
+          successMsg.textContent = '❌ ' + (result.message || 'Failed to send message. Please try again or call us directly.');
+          successMsg.style.background = 'rgba(231,76,60,0.1)';
+          successMsg.style.borderColor = 'rgba(231,76,60,0.3)';
+          successMsg.style.color = '#e74c3c';
+        }
+        
+        successMsg.classList.add('visible');
         setTimeout(() => successMsg.classList.remove('visible'), 6000);
-      }, 1200);
+      })
+      .catch(error => {
+        console.log('Network error:', error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Message';
+        
+        let successMsg = form.querySelector('.form-success');
+        if (!successMsg) {
+          successMsg = document.createElement('div');
+          successMsg.className = 'form-success';
+          successMsg.textContent = '❌ Network error. Please try again or call us directly.';
+          successMsg.style.background = 'rgba(231,76,60,0.1)';
+          successMsg.style.borderColor = 'rgba(231,76,60,0.3)';
+          successMsg.style.color = '#e74c3c';
+          form.appendChild(successMsg);
+        }
+        
+        successMsg.classList.add('visible');
+        setTimeout(() => successMsg.classList.remove('visible'), 6000);
+      });
     });
   }
 
