@@ -800,6 +800,46 @@ ul { list-style: none; }
 .scroll-top.visible { opacity: 1; visibility: visible; }
 .scroll-top:hover { background: var(--gold-light); transform: translateY(-3px); }
 
+/* ── Mobile Performance Optimizations ── */
+@media (max-width: 768px) {
+  /* Reduce expensive effects on mobile */
+  .hero-bg::after {
+    display: none;
+  }
+  
+  /* Optimize backdrop-filter for mobile */
+  #navbar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(11,11,11,.98);
+  }
+  
+  /* Reduce animations on mobile */
+  .btn, .nav-link, .area-card, .review-card, .coupon-card {
+    transition: transform 0.2s ease;
+  }
+  
+  /* Optimize scroll performance */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Reduce box shadows on mobile */
+  .btn:hover, .area-card:hover, .review-card:hover, .coupon-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  
+  /* CSS containment for better performance */
+  .hero, .section, .footer {
+    contain: layout style paint;
+  }
+  
+  /* Optimize images for mobile */
+  img {
+    will-change: transform;
+  }
+}
+
 /* ══ RESPONSIVE ═════════════════════════ */
 @media (max-width: 1100px) {
   .areas-grid { grid-template-columns: 1fr 1fr; }

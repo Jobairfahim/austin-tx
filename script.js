@@ -5,24 +5,36 @@
 (function () {
   'use strict';
 
-  /* ── Navbar scroll effect ── */
+  /* ── Navbar scroll effect (optimized for mobile) ── */
   const navbar = document.getElementById('navbar');
+  let ticking = false;
+  
   function handleScroll() {
-    if (window.scrollY > 40) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        if (window.scrollY > 40) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+        // Show/hide scroll-to-top button
+        const scrollBtn = document.getElementById('scrollTop');
+        if (window.scrollY > 400) {
+          scrollBtn.classList.add('visible');
+        } else {
+          scrollBtn.classList.remove('visible');
+        }
+        // Highlight active nav link (throttled on mobile)
+        if (window.innerWidth > 768) {
+          updateActiveNav();
+        }
+        ticking = false;
+      });
+      ticking = true;
     }
-    // Show/hide scroll-to-top button
-    const scrollBtn = document.getElementById('scrollTop');
-    if (window.scrollY > 400) {
-      scrollBtn.classList.add('visible');
-    } else {
-      scrollBtn.classList.remove('visible');
-    }
-    // Highlight active nav link
-    updateActiveNav();
   }
+  
+  // Use passive listeners for better scroll performance
   window.addEventListener('scroll', handleScroll, { passive: true });
 
   /* ── Active nav link on scroll ── */
@@ -254,29 +266,37 @@
     field.focus();
   }
 
-  /* ── Intersection Observer — fade-in on scroll ── */
+  /* ── Intersection Observer — fade-in on scroll (mobile optimized) ── */
   const fadeTargets = document.querySelectorAll(
     '.service-card, .area-card, .ig-card, .why-item, .faq-group, .ci-item'
   );
 
   if ('IntersectionObserver' in window) {
+    // Use more conservative settings for mobile
+    const isMobile = window.innerWidth <= 768;
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             entry.target.style.opacity = '1';
             entry.target.style.transform = 'translateY(0)';
+            // Unobserve after animation for better performance
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+      { 
+        threshold: isMobile ? 0.05 : 0.1, 
+        rootMargin: isMobile ? '0px 0px -20px 0px' : '0px 0px -40px 0px'
+      }
     );
 
     fadeTargets.forEach((el, i) => {
       el.style.opacity = '0';
       el.style.transform = 'translateY(20px)';
-      el.style.transition = `opacity 0.5s ease ${(i % 6) * 0.08}s, transform 0.5s ease ${(i % 6) * 0.08}s`;
+      // Reduce animation complexity on mobile
+      const transitionDuration = isMobile ? '0.3s' : '0.5s';
+      el.style.transition = `opacity ${transitionDuration} ease ${(i % 6) * 0.08}s, transform ${transitionDuration} ease ${(i % 6) * 0.08}s`;
       observer.observe(el);
     });
   }
