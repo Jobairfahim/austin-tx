@@ -11,10 +11,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
-$name    = trim($_POST['name'] ?? '');
-$email   = trim($_POST['email'] ?? '');
-$phone   = trim($_POST['phone'] ?? '');
-$message = trim($_POST['message'] ?? '');
+/* ✅ Support BOTH JSON body and normal form POST */
+$raw  = file_get_contents('php://input');
+$json = json_decode($raw, true);
+if (!is_array($json)) $json = [];
+
+$data = array_merge($_POST, $json);
+
+$name    = trim($data['name'] ?? '');
+$email   = trim($data['email'] ?? '');
+$phone   = trim($data['phone'] ?? '');
+$message = trim($data['message'] ?? '');
 
 if ($name === '' || $email === '' || $message === '') {
   http_response_code(400);
@@ -22,33 +29,24 @@ if ($name === '' || $email === '' || $message === '') {
     'success' => false,
     'message' => 'Missing required fields',
     'debug' => [
+      'content_type' => $_SERVER['CONTENT_TYPE'] ?? null,
+      'received_keys' => array_keys($data),
       'post' => $_POST,
-      'content_type' => $_SERVER['CONTENT_TYPE'] ?? null
+      'json' => $json
     ]
   ]);
   exit;
 }
 
-/** ✅ Put your REAL ClickSend credentials */
-$username = 'locksinmacon@gmail.com';  // often your ClickSend login email
-$apiKey   = '4CBE5079-AF82-D77A-8FE0-A559C2DA6B07d';   // API key / token from ClickSend
+/**
+ * ✅ SECURITY NOTE:
+ * You exposed your API key in chat. Rotate it in ClickSend and replace below.
+ * Better: put creds in env vars if your hosting supports it.
+ */
+$username = 'locksinmacon@gmail.com';
+$apiKey   = 'REPLACE_WITH_NEW_CLICKSEND_API_KEY';
 $to       = '+18335183268';
 
-// Test response first
-echo json_encode([
-  'success' => true,
-  'message' => 'Test: PHP file is working',
-  'debug' => [
-    'received_data' => $_POST,
-    'name' => $name ?? 'not set',
-    'email' => $email ?? 'not set',
-    'phone' => $phone ?? 'not set',
-    'message' => $message ?? 'not set'
-  ]
-]);
-exit;
-
-/** Keep sender simple for now (avoid sender-id rejection) */
 $payload = [
   'messages' => [[
     'source' => 'php',
@@ -78,9 +76,12 @@ if ($responseBody === false) {
   exit;
 }
 
-/** Always return what ClickSend said (super useful for debugging) */
 if ($status >= 200 && $status < 300) {
-  echo json_encode(['success' => true, 'status' => $status, 'response' => $responseBody]);
+  echo json_encode([
+    'success' => true,
+    'status' => $status,
+    'response' => json_decode($responseBody, true) ?? $responseBody
+  ]);
   exit;
 }
 

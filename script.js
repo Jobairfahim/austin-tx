@@ -199,7 +199,7 @@
         message: formData.get('message')
       };
 
-      fetch('send-clicksend.php', {
+      fetch('/send-clicksend.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
